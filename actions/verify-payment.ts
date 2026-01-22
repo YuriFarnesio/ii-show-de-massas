@@ -22,6 +22,13 @@ export async function verifyPaymentAction(
   slug: string,
 ): Promise<VerifyPaymentResult> {
   try {
+    if (transaction_nsu === "free" && slug === "free") {
+      console.log(
+        `[ACTION] Verificação de pedido gratuito. Order NSU: ${order_nsu}`,
+      );
+      return { paid: true };
+    }
+
     const response = await fetch(
       "https://api.infinitepay.io/invoices/public/checkout/payment_check",
       {

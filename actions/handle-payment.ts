@@ -8,6 +8,7 @@ import { env } from "@/env";
 import { supabaseAdmin } from "@/lib/supabase";
 import { FormData } from "@/schemas/form";
 import { PRICES, type TicketType } from "@/utils/consts";
+import { sendFreeOrderConfirmationEmail } from "@/utils/emails";
 
 type GroupedTickets = Record<
   TicketType,
@@ -70,20 +71,23 @@ export async function handlePaymentAction(data: FormData) {
       return { error: "Erro ao salvar pedido" };
     }
 
-    const { error: ticketsError } = await supabaseAdmin.from("tickets").insert(
-      tickets.map((ticket) => ({
-        order_id: createdOrder.id,
-        name: ticket.name,
-        type: ticket.type,
-        is_member: ticket.isMember,
-        nucleo_name: ticket.nucleoName ?? null,
-        gluten_intolerant: ticket.glutenIntolerant,
-        lactose_intolerant: ticket.lactoseIntolerant,
-      })),
-    );
+    const { data: createdTickets, error: ticketsError } = await supabaseAdmin
+      .from("tickets")
+      .insert(
+        tickets.map((ticket) => ({
+          order_id: createdOrder.id,
+          name: ticket.name,
+          type: ticket.type,
+          is_member: ticket.isMember,
+          nucleo_name: ticket.nucleoName ?? null,
+          gluten_intolerant: ticket.glutenIntolerant,
+          lactose_intolerant: ticket.lactoseIntolerant,
+        })),
+      )
+      .select();
 
-    if (ticketsError) {
-      console.error("[ACTION] Erro ao salvar tickets:", ticketsError.code);
+    if (ticketsError || !createdTickets) {
+      console.error("[ACTION] Erro ao salvar tickets:", ticketsError?.code);
       return { error: "Erro ao salvar ingressos" };
     }
 
@@ -106,76 +110,84 @@ export async function handlePaymentAction(data: FormData) {
         return { error: "Erro ao processar inscrição gratuita" };
       }
 
-      checkoutUrl = `${origin}/sucesso`;
-      return;
-    }
+      console.log(
+        `[ACTION] Pedido gratuito confirmado. Order ID: ${createdOrder.id}`,
+      );
 
-    const groupedTickets = tickets.reduce((acc, { type }) => {
-      if (!acc[type]) {
-        acc[type] = {
-          quantity: 0,
-          price: PRICES[type],
-          description: `Ingresso II Show de Massas - ${type.toUpperCase()}`,
-        };
+      await sendFreeOrderConfirmationEmail({
+        buyer: createdBuyer,
+        tickets: createdTickets,
+      });
+
+      checkoutUrl = `${origin}/sucesso?order_nsu=${createdOrder.id}&transaction_nsu=free&slug=free`;
+    } else {
+      const groupedTickets = tickets.reduce((acc, { type }) => {
+        if (!acc[type]) {
+          acc[type] = {
+            quantity: 0,
+            price: PRICES[type],
+            description: `Ingresso II Show de Massas - ${type.toUpperCase()}`,
+          };
+        }
+
+        acc[type].quantity += 1;
+
+        return acc;
+      }, {} as GroupedTickets);
+
+      const items = Object.values(groupedTickets).filter(
+        (item) => item.price > 0,
+      );
+
+      const freeTickets = Object.values(groupedTickets).filter(
+        (item) => item.price === 0,
+      );
+
+      if (freeTickets.length > 0) {
+        const freeTicketsNames = freeTickets
+          .map((ticket) => `${ticket.quantity}x ${ticket.description}`)
+          .join(", ");
+        items[0].description += ` + ${freeTicketsNames}`;
       }
 
-      acc[type].quantity += 1;
-
-      return acc;
-    }, {} as GroupedTickets);
-
-    const items = Object.values(groupedTickets).filter(
-      (item) => item.price > 0,
-    );
-
-    const freeTickets = Object.values(groupedTickets).filter(
-      (item) => item.price === 0,
-    );
-
-    if (freeTickets.length > 0) {
-      const freeTicketsNames = freeTickets
-        .map((ticket) => `${ticket.quantity}x ${ticket.description}`)
-        .join(", ");
-      items[0].description += ` + ${freeTicketsNames}`;
-    }
-
-    const checkoutResponse = await fetch(
-      "https://api.infinitepay.io/invoices/public/checkout/links",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const checkoutResponse = await fetch(
+        "https://api.infinitepay.io/invoices/public/checkout/links",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            handle: env.INFINITE_PAY_HANDLE,
+            order_nsu: createdOrder.id,
+            metadata: {
+              buyer_id: createdBuyer.id,
+              order_id: createdOrder.id,
+            },
+            items: items,
+            customer: {
+              name: createdBuyer.name,
+              email: createdBuyer.email,
+              phone_number: createdBuyer.phone,
+            },
+            redirect_url: `${origin}/sucesso`,
+            webhook_url: `${origin}/api/webhooks/infinite-pay`,
+          }),
         },
-        body: JSON.stringify({
-          handle: env.INFINITE_PAY_HANDLE,
-          order_nsu: createdOrder.id,
-          metadata: {
-            buyer_id: createdBuyer.id,
-            order_id: createdOrder.id,
-          },
-          items: items,
-          customer: {
-            name: createdBuyer.name,
-            email: createdBuyer.email,
-            phone_number: createdBuyer.phone,
-          },
-          redirect_url: `${origin}/sucesso`,
-          webhook_url: `${origin}/api/webhooks/infinite-pay`,
-        }),
-      },
-    );
-
-    const checkoutData = await checkoutResponse.json();
-
-    if (!checkoutResponse.ok || !checkoutData.url) {
-      console.error(
-        "[ACTION] Resposta inválida da API de pagamento",
-        checkoutData.message,
       );
-      return { error: "Erro ao gerar link de pagamento" };
-    }
 
-    checkoutUrl = checkoutData.url;
+      const checkoutData = await checkoutResponse.json();
+
+      if (!checkoutResponse.ok || !checkoutData.url) {
+        console.error(
+          "[ACTION] Resposta inválida da API de pagamento",
+          checkoutData.message,
+        );
+        return { error: "Erro ao gerar link de pagamento" };
+      }
+
+      checkoutUrl = checkoutData.url;
+    }
   } catch (error: unknown) {
     if (isRedirectError(error)) throw error;
 
