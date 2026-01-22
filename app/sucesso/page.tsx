@@ -21,6 +21,8 @@ export default async function SucessoPage({
 }) {
   const { order_nsu, transaction_nsu, slug } = await searchParams;
 
+  const isFreeRegistration = transaction_nsu === "free" && slug === "free";
+
   if (!order_nsu || !transaction_nsu || !slug) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
@@ -31,13 +33,17 @@ export default async function SucessoPage({
             </div>
 
             <CardTitle className="text-2xl font-bold">
-              Pagamento não confirmado!
+              {isFreeRegistration
+                ? "Inscrição não confirmada!"
+                : "Pagamento não confirmado!"}
             </CardTitle>
           </CardHeader>
 
           <CardContent className="space-y-6">
             <p className="text-muted-foreground">
-              Dados da transação não encontrados.
+              {isFreeRegistration
+                ? "Dados da inscrição não encontrados."
+                : "Dados da transação não encontrados."}
             </p>
             <Link
               href="/"
@@ -62,11 +68,16 @@ export default async function SucessoPage({
       <Suspense
         fallback={
           <div className="text-sm font-medium text-muted-foreground animate-pulse">
-            Verificando pagamento junto à operadora...
+            {isFreeRegistration
+              ? "Confirmando sua inscrição..."
+              : "Verificando pagamento junto à operadora..."}
           </div>
         }
       >
-        <VerifyCard verifyPromise={verifyPromise} />
+        <VerifyCard
+          verifyPromise={verifyPromise}
+          isFreeRegistration={isFreeRegistration}
+        />
       </Suspense>
     </main>
   );

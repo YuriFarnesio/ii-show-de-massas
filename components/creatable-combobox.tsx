@@ -1,7 +1,7 @@
 "use client";
 
 import { PlusCircle } from "lucide-react";
-import { useMemo } from "react";
+import { forwardRef, useMemo } from "react";
 
 import {
   Combobox,
@@ -19,60 +19,65 @@ interface CreatableComboboxProps {
   placeholder?: string;
 }
 
-export function CreatableCombobox({
-  id,
-  options,
-  value,
-  onChange,
-  placeholder = "Selecione ou digite...",
-}: CreatableComboboxProps) {
-  const isNewValue = useMemo(() => {
-    if (!value) return false;
-    return !options.some((opt) => opt.toLowerCase() === value.toLowerCase());
-  }, [options, value]);
+export const CreatableCombobox = forwardRef<
+  HTMLInputElement,
+  CreatableComboboxProps
+>(
+  (
+    { id, options, value, onChange, placeholder = "Selecione ou digite..." },
+    ref,
+  ) => {
+    const isNewValue = useMemo(() => {
+      if (!value) return false;
+      return !options.some((opt) => opt.toLowerCase() === value.toLowerCase());
+    }, [options, value]);
 
-  const filteredOptions = useMemo(() => {
-    return options.filter((option) =>
-      option.toLowerCase().includes(value.toLowerCase()),
+    const filteredOptions = useMemo(() => {
+      return options.filter((option) =>
+        option.toLowerCase().includes(value.toLowerCase()),
+      );
+    }, [options, value]);
+
+    return (
+      <Combobox
+        id={id}
+        value={value}
+        onValueChange={(value) => onChange(value as string)}
+        inputValue={value}
+        onInputValueChange={(value) => onChange(value)}
+      >
+        <ComboboxInput
+          ref={ref}
+          placeholder={placeholder}
+          className="w-full"
+          inputClassName="text-sm md:text-xs"
+        />
+        <ComboboxContent>
+          <ComboboxList>
+            {filteredOptions.map((option) => (
+              <ComboboxItem
+                key={option}
+                value={option}
+                className="text-sm md:text-xs"
+              >
+                {option}
+              </ComboboxItem>
+            ))}
+
+            {isNewValue && (
+              <ComboboxItem
+                value={value}
+                className="text-sm md:text-xs font-semibold text-primary cursor-pointer"
+              >
+                <PlusCircle className="size-4 md:size-3" />
+                Criar &ldquo;{value}&rdquo;
+              </ComboboxItem>
+            )}
+          </ComboboxList>
+        </ComboboxContent>
+      </Combobox>
     );
-  }, [options, value]);
+  },
+);
 
-  return (
-    <Combobox
-      id={id}
-      value={value}
-      onValueChange={(value) => onChange(value as string)}
-      inputValue={value}
-      onInputValueChange={(value) => onChange(value)}
-    >
-      <ComboboxInput
-        placeholder={placeholder}
-        className="w-full"
-        inputClassName="text-sm md:text-xs"
-      />
-      <ComboboxContent>
-        <ComboboxList>
-          {filteredOptions.map((option) => (
-            <ComboboxItem
-              key={option}
-              value={option}
-              className="text-sm md:text-xs"
-            >
-              {option}
-            </ComboboxItem>
-          ))}
-
-          {isNewValue && (
-            <ComboboxItem
-              value={value}
-              className="text-sm md:text-xs font-semibold text-primary cursor-pointer"
-            >
-              <PlusCircle className="size-4 md:size-3" />
-              Criar &ldquo;{value}&rdquo;
-            </ComboboxItem>
-          )}
-        </ComboboxList>
-      </ComboboxContent>
-    </Combobox>
-  );
-}
+CreatableCombobox.displayName = "CreatableCombobox";

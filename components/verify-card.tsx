@@ -20,8 +20,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function VerifyCard({
   verifyPromise,
+  isFreeRegistration = false,
 }: {
   verifyPromise: Promise<VerifyPaymentResult>;
+  isFreeRegistration?: boolean;
 }) {
   const searchParams = useSearchParams();
   const result = use(verifyPromise);
@@ -41,14 +43,17 @@ export function VerifyCard({
           </div>
 
           <CardTitle className="text-2xl font-bold">
-            Pagamento não confirmado!
+            {isFreeRegistration
+              ? "Inscrição não confirmada!"
+              : "Pagamento não confirmado!"}
           </CardTitle>
         </CardHeader>
 
         <CardContent className="space-y-6">
           <p className="text-muted-foreground">
-            Não conseguimos confirmar seu pagamento. Se houve algum problema,
-            entre em contato conosco.
+            {isFreeRegistration
+              ? "Não conseguimos confirmar sua inscrição. Se houve algum problema, entre em contato conosco."
+              : "Não conseguimos confirmar seu pagamento. Se houve algum problema, entre em contato conosco."}
           </p>
           <Link
             href="/"
@@ -73,15 +78,26 @@ export function VerifyCard({
         </div>
 
         <CardTitle className="text-2xl font-bold">
-          Pagamento Confirmado!
+          {isFreeRegistration
+            ? "Inscrição Confirmada!"
+            : "Pagamento Confirmado!"}
         </CardTitle>
       </CardHeader>
 
       <CardContent className="space-y-6">
         <div className="space-y-2">
           <p className="text-muted-foreground">
-            Seus ingressos para o <strong>II Show de Massas</strong> foram
-            adquiridos com sucesso.
+            {isFreeRegistration ? (
+              <>
+                Sua inscrição para o <strong>II Show de Massas</strong> foi
+                confirmada com sucesso.
+              </>
+            ) : (
+              <>
+                Seus ingressos para o <strong>II Show de Massas</strong> foram
+                adquiridos com sucesso.
+              </>
+            )}
           </p>
 
           <p className="text-sm text-muted-foreground bg-blue-50 p-2 rounded-md">
@@ -92,15 +108,22 @@ export function VerifyCard({
         <div className="space-y-3 bg-secondary/30 text-left rounded-lg p-4">
           <div className="flex items-center gap-2 text-primary font-semibold border-b border-border pb-2">
             <Ticket className="size-5" />
-            <span>Resumo da Compra</span>
+            <span>
+              {isFreeRegistration ? "Resumo da Inscrição" : "Resumo da Compra"}
+            </span>
           </div>
 
           <div className="space-y-1 text-xs font-mono text-muted-foreground">
-            <p>NSU Transação: {transactionNsu || "---"}</p>
-            <p>Pedido: {orderNsu?.split("-")[0] || "---"}</p>
+            {!isFreeRegistration && (
+              <p>NSU Transação: {transactionNsu || "---"}</p>
+            )}
+            <p>
+              {isFreeRegistration ? "Inscrição" : "Pedido"}:{" "}
+              {orderNsu?.split("-")[0] || "---"}
+            </p>
           </div>
 
-          {receiptUrl && (
+          {receiptUrl && !isFreeRegistration && (
             <a
               href={receiptUrl}
               target="_blank"

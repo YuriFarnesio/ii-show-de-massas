@@ -3,7 +3,8 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Ticket, Trash2, User, WheatOff } from "lucide-react";
 import { useState } from "react";
-import { useFieldArray, useForm, useWatch } from "react-hook-form";
+import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
+import { toast } from "sonner";
 
 import { formSchema, type FormData } from "@/schemas/form";
 import {
@@ -101,14 +102,19 @@ export default function TicketForm() {
       const result = await handlePaymentAction(data);
 
       if (result?.error) {
-        console.error("Erro na Action:", result.error);
-        setIsLoading(false);
+        toast.error(result.error, { id: "checkout" });
         return;
       }
     } catch (error: unknown) {
-      if (error instanceof Error && error.message === "NEXT_REDIRECT") return;
+      if (error instanceof Error && error.message === "NEXT_REDIRECT") {
+        toast.success(
+          total === 0 ? "Inscrição confirmada!" : "Redirecionando...",
+          { id: "checkout" },
+        );
+        return;
+      }
 
-      console.error("Erro inesperado no checkout:", error);
+      toast.error("Erro inesperado. Tente novamente.", { id: "checkout" });
     } finally {
       setIsLoading(false);
     }
@@ -364,14 +370,19 @@ export default function TicketForm() {
                             Nome do Núcleo
                           </Label>
 
-                          <CreatableCombobox
-                            id={`tickets.${index}.nucleoName`}
-                            options={NUCLEO_NAMES}
-                            value={tickets[index]?.nucleoName || ""}
-                            onChange={(val) =>
-                              setValue(`tickets.${index}.nucleoName`, val)
-                            }
-                            placeholder="Selecione ou digite o núcleo"
+                          <Controller
+                            name={`tickets.${index}.nucleoName`}
+                            control={control}
+                            render={({ field: { value, onChange, ref } }) => (
+                              <CreatableCombobox
+                                id={`tickets.${index}.nucleoName`}
+                                options={NUCLEO_NAMES}
+                                value={value || ""}
+                                onChange={onChange}
+                                placeholder="Selecione ou digite o núcleo"
+                                ref={ref}
+                              />
+                            )}
                           />
 
                           {errors.tickets?.[index]?.nucleoName && (
