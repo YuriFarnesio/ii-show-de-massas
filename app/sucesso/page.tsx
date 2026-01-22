@@ -37,7 +37,7 @@ function SuccessContent() {
           slug,
         );
 
-        setIsPaid(result.paid);
+        setIsPaid(!!result.paid);
       }
 
       setIsValidating(false);
