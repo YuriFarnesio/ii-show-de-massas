@@ -1,17 +1,17 @@
-export const TICKET_TYPES = ["adult", "youth", "child"] as const;
+export const TICKET_TYPES = ["inteira", "juvenil", "infantil"] as const;
 
 export type TicketType = (typeof TICKET_TYPES)[number];
 
 export const PRICES: Record<TicketType, number> = {
-  adult: 50,
-  youth: 35,
-  child: 0,
+  inteira: 5000,
+  juvenil: 3500,
+  infantil: 0,
 };
 
 export const TICKET_LABELS: Record<TicketType, string> = {
-  adult: "Adulto (acima de 16 anos) - R$ 50",
-  youth: "Jovem (12 a 16 anos) - R$ 35",
-  child: "Criança - Gratuito",
+  inteira: "Adulto (acima de 16 anos) - R$ 50",
+  juvenil: "Jovem (12 a 16 anos) - R$ 35",
+  infantil: "Criança - Gratuito",
 };
 
 export const NUCLEO_NAMES = [

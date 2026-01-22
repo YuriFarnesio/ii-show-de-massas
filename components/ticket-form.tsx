@@ -14,6 +14,7 @@ import {
 } from "@/utils/consts";
 import { maskCPF, maskPhone } from "@/utils/functions";
 
+import { handlePaymentAction } from "@/actions/handle-payment";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -85,7 +86,7 @@ export default function TicketForm() {
   function addTicket() {
     append({
       name: "",
-      type: "adult",
+      type: "inteira",
       isMember: false,
       nucleoName: "",
       glutenIntolerant: false,
@@ -97,21 +98,19 @@ export default function TicketForm() {
     setIsLoading(true);
 
     try {
-      console.log(data);
-      // const { data: response, error } = await supabase.functions.invoke("create-checkout", {
-      //   body: data,
-      // });
-      // if (error) {
-      //   throw new Error(error.message);
-      // }
-      // if (response?.url) {
-      //   window.open(response.url, "_blank");
-      // } else {
-      //   throw new Error("Não foi possível criar a sessão de pagamento");
-      // }
-    } catch (error) {
-      console.error("Checkout error:", error);
-      // toast.error("Erro ao processar pagamento. Tente novamente.");
+      const result = await handlePaymentAction(data);
+
+      if (result?.error) {
+        console.error("Erro na Action:", result.error);
+        // toast.error(result.error);
+        setIsLoading(false);
+        return;
+      }
+    } catch (error: unknown) {
+      if (error instanceof Error && error.message === "NEXT_REDIRECT") return;
+
+      console.error("Erro inesperado no checkout:", error);
+      // Exemplo: toast.error("Erro inesperado no checkout");
     } finally {
       setIsLoading(false);
     }
@@ -460,7 +459,12 @@ export default function TicketForm() {
                 Total:
               </legend>
               <span className="text-xl md:text-2xl font-bold text-primary">
-                {total === 0 ? "Gratuito" : `R$ ${total},00`}
+                {total === 0
+                  ? "Gratuito"
+                  : `R$ ${Intl.NumberFormat("pt-BR", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    }).format(total / 100)}`}
               </span>
             </div>
 
