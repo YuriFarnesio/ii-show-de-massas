@@ -2,11 +2,25 @@
 
 import { env } from "@/env";
 
+interface InfinitePayCheckResponse {
+  success: boolean;
+  paid: boolean;
+  amount: number;
+  paid_amount: number;
+  installments: number;
+  capture_method: string;
+}
+
+export interface VerifyPaymentResult {
+  paid: boolean;
+  error?: string;
+}
+
 export async function verifyPaymentAction(
   order_nsu: string,
   transaction_nsu: string,
   slug: string,
-) {
+): Promise<VerifyPaymentResult> {
   try {
     const response = await fetch(
       "https://api.infinitepay.io/invoices/public/checkout/payment_check",
@@ -22,21 +36,17 @@ export async function verifyPaymentAction(
       },
     );
 
-    const data = await response.json();
+    const data: InfinitePayCheckResponse = await response.json();
 
     if (!response.ok) {
       console.error(
         "[ACTION] Resposta inválida da API de verificação status",
-        response,
+        data,
       );
-      return { error: "Erro ao verificar status" };
+      return { paid: false, error: "Erro ao verificar status" };
     }
 
-    return {
-      paid: data.paid === true,
-      amount: data.amount,
-      method: data.capture_method,
-    };
+    return { paid: data.paid === true };
   } catch (error) {
     console.error(
       "[ACTION] Erro ao verificar pagamento:",

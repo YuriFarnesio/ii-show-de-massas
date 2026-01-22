@@ -6,7 +6,8 @@ const envSchema = z.object({
   SUPABASE_SECRET_KEY: z.string(),
   SUPABASE_PASSWORD: z.string(),
   INFINITE_PAY_HANDLE: z.string(),
-  RESEND_API_KEY: z.string(),
+  SMTP_EMAIL: z.string(),
+  SMTP_PASS: z.string(),
 });
 
 export const env = envSchema.parse(process.env);

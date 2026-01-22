@@ -102,7 +102,6 @@ export default function TicketForm() {
 
       if (result?.error) {
         console.error("Erro na Action:", result.error);
-        // toast.error(result.error);
         setIsLoading(false);
         return;
       }
@@ -110,7 +109,6 @@ export default function TicketForm() {
       if (error instanceof Error && error.message === "NEXT_REDIRECT") return;
 
       console.error("Erro inesperado no checkout:", error);
-      // Exemplo: toast.error("Erro inesperado no checkout");
     } finally {
       setIsLoading(false);
     }

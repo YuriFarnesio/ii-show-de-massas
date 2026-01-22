@@ -87,6 +87,29 @@ export async function handlePaymentAction(data: FormData) {
       return { error: "Erro ao salvar ingressos" };
     }
 
+    if (totalAmount === 0) {
+      const { error: updateOrderError } = await supabaseAdmin
+        .from("orders")
+        .update({
+          status: "paid",
+          payment_method: "free",
+          amount: 0,
+          paid_amount: 0,
+        })
+        .eq("id", createdOrder.id);
+
+      if (updateOrderError) {
+        console.error(
+          `[ACTION] Erro ao atualizar status do pedido gratuito. Order ID: ${createdOrder.id}`,
+          updateOrderError.code,
+        );
+        return { error: "Erro ao processar inscrição gratuita" };
+      }
+
+      checkoutUrl = `${origin}/sucesso`;
+      return;
+    }
+
     const groupedTickets = tickets.reduce((acc, { type }) => {
       if (!acc[type]) {
         acc[type] = {
@@ -100,6 +123,21 @@ export async function handlePaymentAction(data: FormData) {
 
       return acc;
     }, {} as GroupedTickets);
+
+    const items = Object.values(groupedTickets).filter(
+      (item) => item.price > 0,
+    );
+
+    const freeTickets = Object.values(groupedTickets).filter(
+      (item) => item.price === 0,
+    );
+
+    if (freeTickets.length > 0) {
+      const freeTicketsNames = freeTickets
+        .map((ticket) => `${ticket.quantity}x ${ticket.description}`)
+        .join(", ");
+      items[0].description += ` + ${freeTicketsNames}`;
+    }
 
     const checkoutResponse = await fetch(
       "https://api.infinitepay.io/invoices/public/checkout/links",
@@ -115,7 +153,7 @@ export async function handlePaymentAction(data: FormData) {
             buyer_id: createdBuyer.id,
             order_id: createdOrder.id,
           },
-          items: Object.values(groupedTickets).filter((item) => item.price > 0),
+          items: items,
           customer: {
             name: createdBuyer.name,
             email: createdBuyer.email,
@@ -132,7 +170,7 @@ export async function handlePaymentAction(data: FormData) {
     if (!checkoutResponse.ok || !checkoutData.url) {
       console.error(
         "[ACTION] Resposta inválida da API de pagamento",
-        checkoutResponse,
+        checkoutData.message,
       );
       return { error: "Erro ao gerar link de pagamento" };
     }
