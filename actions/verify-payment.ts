@@ -1,6 +1,7 @@
 "use server";
 
 import { env } from "@/env";
+import { supabaseAdmin } from "@/lib/supabase";
 
 interface InfinitePayCheckResponse {
   success: boolean;
@@ -19,6 +20,7 @@ export interface VerifyPaymentResult {
 export async function verifyPaymentAction(
   order_nsu: string,
   transaction_nsu: string,
+  receipt_url: string,
   slug: string,
 ): Promise<VerifyPaymentResult> {
   try {
@@ -27,6 +29,17 @@ export async function verifyPaymentAction(
         `[ACTION] Verificação de pedido gratuito. Order NSU: ${order_nsu}`,
       );
       return { paid: true };
+    }
+
+    const { data: currentOrder, error: orderError } = await supabaseAdmin
+      .from("orders")
+      .select("status")
+      .eq("id", order_nsu)
+      .single();
+
+    if (orderError || !currentOrder) {
+      console.error(`[ACTION] Pedido não encontrado. Order NSU: ${order_nsu}`);
+      return { paid: false, error: "Erro ao buscar pedido" };
     }
 
     const response = await fetch(
@@ -51,6 +64,30 @@ export async function verifyPaymentAction(
         data,
       );
       return { paid: false, error: "Erro ao verificar status" };
+    }
+
+    if (data.paid && currentOrder.status !== "paid") {
+      const { error: updateError } = await supabaseAdmin
+        .from("orders")
+        .update({
+          status: "paid",
+          external_id: transaction_nsu,
+          invoice_slug: slug,
+          receipt_url: receipt_url,
+          payment_method: data.capture_method,
+          installments: data.installments,
+          amount: data.amount,
+          paid_amount: data.paid_amount,
+        })
+        .eq("id", order_nsu);
+
+      if (updateError) {
+        console.error(
+          `[ACTION] Erro ao atualizar pedido. Order NSU: ${order_nsu}`,
+        );
+      } else {
+        console.log(`[ACTION] Pedido atualizado. Order NSU: ${order_nsu}`);
+      }
     }
 
     return { paid: data.paid === true };

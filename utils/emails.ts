@@ -100,6 +100,7 @@ export async function sendPaidOrderConfirmationEmail(
 
   await sendEmailAction(to, subject, html, text);
 }
+
 type FreeOrderConfirmationDetails = {
   buyer: Buyer;
   tickets: Ticket[];

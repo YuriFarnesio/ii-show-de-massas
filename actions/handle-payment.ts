@@ -79,7 +79,7 @@ export async function handlePaymentAction(data: FormData) {
           name: ticket.name,
           type: ticket.type,
           is_member: ticket.isMember,
-          nucleo_name: ticket.nucleoName ?? null,
+          nucleo_name: ticket.nucleoName || null,
           gluten_intolerant: ticket.glutenIntolerant,
           lactose_intolerant: ticket.lactoseIntolerant,
         })),
@@ -119,7 +119,7 @@ export async function handlePaymentAction(data: FormData) {
         tickets: createdTickets,
       });
 
-      checkoutUrl = `${origin}/sucesso?order_nsu=${createdOrder.id}&transaction_nsu=free&slug=free`;
+      checkoutUrl = `${origin}/sucesso?order_nsu=${createdOrder.id}&transaction_nsu=free&receipt_url=free&slug=free`;
     } else {
       const groupedTickets = tickets.reduce((acc, { type }) => {
         if (!acc[type]) {
@@ -168,6 +168,7 @@ export async function handlePaymentAction(data: FormData) {
             customer: {
               name: createdBuyer.name,
               email: createdBuyer.email,
+              cpf: createdBuyer.cpf,
               phone_number: createdBuyer.phone,
             },
             redirect_url: `${origin}/sucesso`,

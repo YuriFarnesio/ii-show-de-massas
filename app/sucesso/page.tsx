@@ -19,7 +19,7 @@ export default async function SucessoPage({
     slug: string;
   }>;
 }) {
-  const { order_nsu, transaction_nsu, slug } = await searchParams;
+  const { order_nsu, transaction_nsu, receipt_url, slug } = await searchParams;
 
   const isFreeRegistration = transaction_nsu === "free" && slug === "free";
 
@@ -61,7 +61,12 @@ export default async function SucessoPage({
     );
   }
 
-  const verifyPromise = verifyPaymentAction(order_nsu, transaction_nsu, slug);
+  const verifyPromise = verifyPaymentAction(
+    order_nsu,
+    transaction_nsu,
+    receipt_url,
+    slug,
+  );
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
