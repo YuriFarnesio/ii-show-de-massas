@@ -22,7 +22,7 @@ export const NUCLEO_NAMES = [
   "Núcleo Divinópolis",
   "Núcleo Flor de Mariri",
   "Núcleo Rei Salomão",
-  "Núcleo Flor Encantador",
+  "Núcleo Flor Encantadora",
   "Núcleo Menino Rei",
 ] as const;
 
