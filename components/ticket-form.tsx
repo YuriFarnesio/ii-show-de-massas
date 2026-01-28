@@ -2,10 +2,11 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Plus, Ticket, Trash2, User, WheatOff } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useFieldArray, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 
+import { getNucleoNames } from "@/actions/get-nucleo-names";
 import { formSchema, type FormData } from "@/schemas/form";
 import {
   NUCLEO_NAMES,
@@ -40,6 +41,9 @@ export default function TicketForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [cpfValue, setCpfValue] = useState("");
   const [phoneValue, setPhoneValue] = useState("");
+  const [nucleoOptions, setNucleoOptions] = useState<string[]>([
+    ...NUCLEO_NAMES,
+  ]);
 
   const {
     control,
@@ -71,6 +75,22 @@ export default function TicketForm() {
   });
 
   const total = tickets.reduce((sum, ticket) => sum + PRICES[ticket.type], 0);
+
+  useEffect(() => {
+    async function fetchNucleoNames() {
+      const dbNucleos = await getNucleoNames();
+
+      const allNucleos = Array.from(new Set([...NUCLEO_NAMES, ...dbNucleos]));
+
+      const sortedNucleos = allNucleos.sort((a, b) =>
+        a.localeCompare(b, "pt-BR"),
+      );
+
+      setNucleoOptions(sortedNucleos);
+    }
+
+    fetchNucleoNames();
+  }, []);
 
   function handleCPFChange(e: React.ChangeEvent<HTMLInputElement>) {
     const masked = maskCPF(e.target.value);
@@ -376,7 +396,7 @@ export default function TicketForm() {
                             render={({ field: { value, onChange, ref } }) => (
                               <CreatableCombobox
                                 id={`tickets.${index}.nucleoName`}
-                                options={NUCLEO_NAMES}
+                                options={nucleoOptions}
                                 value={value || ""}
                                 onChange={onChange}
                                 placeholder="Selecione ou digite o núcleo"

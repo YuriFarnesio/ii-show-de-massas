@@ -173,6 +173,7 @@ export async function handlePaymentAction(data: FormData) {
             },
             redirect_url: `${origin}/sucesso`,
             webhook_url: `${origin}/api/webhooks/infinite-pay`,
+            // webhook_url: `https://webhook.site/910571d2-e6e5-4228-9f0c-45c51694613f/api/webhooks/infinite-pay`,
           }),
         },
       );

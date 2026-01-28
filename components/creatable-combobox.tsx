@@ -13,7 +13,7 @@ import {
 
 interface CreatableComboboxProps {
   id?: string;
-  options: readonly string[];
+  options: string[];
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;

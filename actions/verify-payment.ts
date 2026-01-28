@@ -2,6 +2,7 @@
 
 import { env } from "@/env";
 import { supabaseAdmin } from "@/lib/supabase";
+import { sendPaidOrderConfirmationEmail } from "@/utils/emails";
 
 interface InfinitePayCheckResponse {
   success: boolean;
@@ -87,6 +88,27 @@ export async function verifyPaymentAction(
         );
       } else {
         console.log(`[ACTION] Pedido atualizado. Order NSU: ${order_nsu}`);
+
+        const { data: orderData, error: fetchError } = await supabaseAdmin
+          .from("orders")
+          .select(
+            `
+            amount,
+            paid_amount,
+            buyers (name, email),
+            tickets (name, type, is_member, nucleo_name, gluten_intolerant, lactose_intolerant)
+          `,
+          )
+          .eq("id", order_nsu)
+          .single();
+
+        if (fetchError || !orderData) {
+          console.error(
+            `[ACTION] Erro ao buscar dados para e-mail. Order NSU: ${order_nsu}`,
+          );
+        } else {
+          await sendPaidOrderConfirmationEmail(orderData);
+        }
       }
     }
 
