@@ -27,32 +27,26 @@ export async function handlePaymentAction(data: FormData) {
       0,
     );
 
-    const { data: existingBuyer } = await supabaseAdmin
-      .from("buyers")
-      .select("id, email")
-      .eq("cpf", buyer.cpf.replace(/\D/g, ""))
-      .single();
-
-    if (existingBuyer && existingBuyer.email !== buyer.email) {
-      return { error: "Este CPF já está vinculado a outro e-mail." };
-    }
+    const cpfClean = buyer.cpf.replace(/\D/g, "");
+    const emailClean = buyer.email.toLowerCase().trim();
+    const phoneClean = buyer.phone.replace(/\D/g, "");
 
     const { data: createdBuyer, error: buyerError } = await supabaseAdmin
       .from("buyers")
       .upsert(
         {
           name: buyer.name,
-          email: buyer.email,
-          cpf: buyer.cpf.replace(/\D/g, ""),
-          phone: buyer.phone.replace(/\D/g, ""),
+          email: emailClean,
+          cpf: cpfClean,
+          phone: phoneClean,
         },
-        { onConflict: "cpf" },
+        { onConflict: "email,cpf" },
       )
       .select()
       .single();
 
     if (buyerError || !createdBuyer) {
-      console.error("[ACTION] Erro ao salvar comprador:", buyerError?.code);
+      console.error("[ACTION] Erro ao salvar comprador:", buyerError?.message);
       return { error: "Erro ao salvar comprador" };
     }
 
@@ -67,7 +61,7 @@ export async function handlePaymentAction(data: FormData) {
       .single();
 
     if (orderError || !createdOrder) {
-      console.error("[ACTION] Erro ao criar pedido:", orderError?.code);
+      console.error("[ACTION] Erro ao criar pedido:", orderError?.message);
       return { error: "Erro ao salvar pedido" };
     }
 
@@ -87,7 +81,7 @@ export async function handlePaymentAction(data: FormData) {
       .select();
 
     if (ticketsError || !createdTickets) {
-      console.error("[ACTION] Erro ao salvar tickets:", ticketsError?.code);
+      console.error("[ACTION] Erro ao salvar tickets:", ticketsError?.message);
       return { error: "Erro ao salvar ingressos" };
     }
 
@@ -105,7 +99,7 @@ export async function handlePaymentAction(data: FormData) {
       if (updateOrderError) {
         console.error(
           `[ACTION] Erro ao atualizar status do pedido gratuito. Order ID: ${createdOrder.id}`,
-          updateOrderError.code,
+          updateOrderError.message,
         );
         return { error: "Erro ao processar inscrição gratuita" };
       }
