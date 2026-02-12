@@ -46,7 +46,11 @@ export async function handlePaymentAction(data: FormData) {
       .single();
 
     if (buyerError || !createdBuyer) {
-      console.error("[ACTION] Erro ao salvar comprador:", buyerError?.message);
+      console.error(
+        "[ACTION] Erro ao salvar comprador:",
+        buyer,
+        buyerError?.message,
+      );
       return { error: "Erro ao salvar comprador" };
     }
 
