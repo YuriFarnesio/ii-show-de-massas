@@ -1,3 +1,4 @@
+import { SystemStatusModal } from "@/components/SystemStatusModal";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Toaster } from "sonner";
@@ -20,8 +21,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
-      <body className={`${inter.className} antialiased`}>
+      <body className={`${inter.className} antialiased overflow-hidden`}>
         {children}
+        <SystemStatusModal />
         <Toaster position="top-center" richColors closeButton />
       </body>
     </html>
