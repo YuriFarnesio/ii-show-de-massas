@@ -1,4 +1,4 @@
-import { SystemStatusModal } from "@/components/SystemStatusModal";
+import { WhatsAppButton } from "@/components/WhatsAppButton";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Toaster } from "sonner";
@@ -21,9 +21,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR">
-      <body className={`${inter.className} antialiased overflow-hidden`}>
+      <body className={`${inter.className} antialiased`}>
         {children}
-        <SystemStatusModal />
+        <WhatsAppButton />
         <Toaster position="top-center" richColors closeButton />
       </body>
     </html>
