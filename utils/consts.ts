@@ -14,6 +14,12 @@ export const TICKET_LABELS: Record<TicketType, string> = {
   infantil: "Criança - Gratuito",
 };
 
+export const TICKET_NAMES: Record<TicketType, string> = {
+  inteira: "Adulto",
+  juvenil: "Jovem",
+  infantil: "Criança",
+};
+
 export const NUCLEO_NAMES = [
   "Núcleo Lagoa da Prata",
   "Núcleo Jardim do Mestre",

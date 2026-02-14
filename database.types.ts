@@ -93,6 +93,7 @@ export type Database = {
       }
       tickets: {
         Row: {
+          checked_in: boolean
           created_at: string
           gluten_intolerant: boolean
           id: string
@@ -104,6 +105,7 @@ export type Database = {
           type: string
         }
         Insert: {
+          checked_in?: boolean
           created_at?: string
           gluten_intolerant?: boolean
           id?: string
@@ -115,6 +117,7 @@ export type Database = {
           type: string
         }
         Update: {
+          checked_in?: boolean
           created_at?: string
           gluten_intolerant?: boolean
           id?: string
